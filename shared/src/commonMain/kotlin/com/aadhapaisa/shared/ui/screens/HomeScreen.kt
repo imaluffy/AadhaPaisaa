@@ -63,6 +63,8 @@ fun HomeScreen(
             var showSuccessMessage by remember { mutableStateOf(false) }
             var isCreatingEntry by remember { mutableStateOf(false) }
             var entryCreationProgress by remember { mutableStateOf("") }
+            var currentEntryIndex by remember { mutableStateOf(0) }
+            var totalEntries by remember { mutableStateOf(0) }
     
     // Listen to shared file selection state
     val selectedFileName by FileSelectionManager.selectedFileName.collectAsState()
@@ -455,20 +457,22 @@ fun HomeScreen(
                         excelData = null
                     },
                     onCreateStockEntry = {
-                        // Create stock entry from Excel data
+                        // Create stock entries from Excel data
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
                                 isCreatingEntry = true
                                 entryCreationProgress = "Processing Excel data..."
+                                currentEntryIndex = 0
+                                totalEntries = 0
                                 
-                                println("📊 HomeScreen: Creating stock entry from Excel data")
-                                entryCreationProgress = "Searching for stock..."
+                                println("📊 HomeScreen: Creating stock entries from Excel data")
+                                entryCreationProgress = "Searching for stocks..."
                                 
                                 val success = stockEntryService.createStockEntryFromExcel(excelData!!)
                                 
                                 if (success) {
-                                    entryCreationProgress = "Creating portfolio entry..."
-                                    println("📊 HomeScreen: Stock entry created successfully")
+                                    entryCreationProgress = "Creating portfolio entries..."
+                                    println("📊 HomeScreen: Stock entries created successfully")
                                     
                                     // Small delay to show the final progress message
                                     kotlinx.coroutines.delay(500)
@@ -485,13 +489,13 @@ fun HomeScreen(
                                     viewModel.refreshPortfolio()
                                 } else {
                                     isCreatingEntry = false
-                                    entryCreationProgress = "Failed to create entry"
-                                    println("❌ HomeScreen: Failed to create stock entry")
+                                    entryCreationProgress = "Failed to create entries"
+                                    println("❌ HomeScreen: Failed to create stock entries")
                                 }
                             } catch (e: Exception) {
                                 isCreatingEntry = false
                                 entryCreationProgress = "Error: ${e.message}"
-                                println("❌ HomeScreen: Error creating stock entry: ${e.message}")
+                                println("❌ HomeScreen: Error creating stock entries: ${e.message}")
                                 e.printStackTrace()
                             }
                         }
@@ -503,14 +507,14 @@ fun HomeScreen(
             if (showSuccessMessage) {
                 androidx.compose.material3.AlertDialog(
                     onDismissRequest = { showSuccessMessage = false },
-                    title = { Text("✅ Stock Entry Created!") },
+                    title = { Text("✅ Stock Entries Created!") },
                     text = {
                         Column {
-                            Text("Your stock entry has been automatically created and saved to your portfolio!")
+                            Text("Your stock entries have been automatically created and saved to your portfolio!")
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("The system searched for the stock, got its current price, and created the entry with your Excel data.")
+                            Text("The system processed multiple rows from your Excel file, searched for each stock, got their current prices, and created entries with your data.")
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Check the Portfolio tab to see your new holding.")
+                            Text("Check the Portfolio tab to see your new holdings.")
                         }
                     },
                     confirmButton = {

@@ -21,14 +21,26 @@ actual class StockEntryService {
                 println("📊 StockEntryService: Processing Excel data for stock entry creation")
                 
                 // Find the extracted stock data from Excel
-                val stockData = findStockDataFromExcel(excelData)
-                if (stockData != null) {
-                    println("📊 StockEntryService: Found stock data: $stockData")
-                    return@withContext searchAndCreateEntry(
-                        stockData.stockSymbol,
-                        stockData.quantity,
-                        stockData.avgPrice
-                    )
+                val stockDataList = findMultipleStockDataFromExcel(excelData)
+                if (stockDataList.isNotEmpty()) {
+                    println("📊 StockEntryService: Found ${stockDataList.size} stock entries to create")
+                    var successCount = 0
+                    for ((index, stockData) in stockDataList.withIndex()) {
+                        println("📊 StockEntryService: Creating entry ${index + 1}/${stockDataList.size}: ${stockData.stockSymbol}")
+                        val success = searchAndCreateEntry(
+                            stockData.stockSymbol,
+                            stockData.quantity,
+                            stockData.avgPrice
+                        )
+                        if (success) {
+                            successCount++
+                            println("📊 StockEntryService: ✅ Entry ${index + 1} created successfully")
+                        } else {
+                            println("📊 StockEntryService: ❌ Entry ${index + 1} failed")
+                        }
+                    }
+                    println("📊 StockEntryService: Created $successCount out of ${stockDataList.size} entries")
+                    return@withContext successCount > 0
                 } else {
                     println("❌ StockEntryService: No stock data found in Excel")
                     return@withContext false
@@ -134,6 +146,44 @@ actual class StockEntryService {
                 return@withContext false
             }
         }
+    }
+    
+    private fun findMultipleStockDataFromExcel(excelData: ExcelData): List<StockEntryData> {
+        println("📊 StockEntryService: Searching for multiple stock data in Excel...")
+        val stockDataList = mutableListOf<StockEntryData>()
+        
+        for (sheet in excelData.sheets) {
+            println("📊 StockEntryService: Checking sheet: ${sheet.name}")
+            for (row in sheet.rows) {
+                println("📊 StockEntryService: Row ${row.rowNumber}: ${row.cells}")
+                // Look for rows 12, 13, 14 (data rows) and extract the first 4 columns
+                if (row.rowNumber in 12..14 && row.cells.size >= 4) {
+                    val stockName = row.cells[0]
+                    val stockSymbol = row.cells[1]
+                    val quantity = row.cells[2]
+                    val avgPrice = row.cells[3]
+                    
+                    // Skip empty rows
+                    if (stockName.isNotBlank() && stockSymbol.isNotBlank() && quantity.isNotBlank() && avgPrice.isNotBlank()) {
+                        println("📊 StockEntryService: Found data in row ${row.rowNumber}:")
+                        println("📊 StockEntryService: - Stock Name: '$stockName'")
+                        println("📊 StockEntryService: - Stock Symbol: '$stockSymbol'")
+                        println("📊 StockEntryService: - Quantity: '$quantity'")
+                        println("📊 StockEntryService: - Avg Price: '$avgPrice'")
+                        
+                        stockDataList.add(StockEntryData(
+                            stockName = stockName,
+                            stockSymbol = stockSymbol,
+                            quantity = quantity,
+                            avgPrice = avgPrice
+                        ))
+                    }
+                }
+            }
+        }
+        
+        println("📊 StockEntryService: Found ${stockDataList.size} valid stock entries")
+        return stockDataList
     }
     
     private fun findStockDataFromExcel(excelData: ExcelData): StockEntryData? {

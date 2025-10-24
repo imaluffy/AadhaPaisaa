@@ -89,51 +89,37 @@ actual class ExcelReaderService {
                         val columnMapping = mapHeadersToFields(headerCells)
                         println("📊 ExcelReaderService: Column mapping: $columnMapping")
                         
-                        // Read only the 12th row (index 11) - first data row
-                        val dataRowIndex = 11 // Row 12 in Excel (0-indexed)
-                        val dataRow = sheet.getRow(dataRowIndex)
+                        // Read rows 12, 13, 14 (indices 11, 12, 13) - data rows
+                        val dataRowIndices = listOf(11, 12, 13) // Rows 12, 13, 14 in Excel (0-indexed)
                         
-                        if (dataRow != null) {
-                            println("📊 ExcelReaderService: Found data row at index $dataRowIndex")
+                        for (dataRowIndex in dataRowIndices) {
+                            val dataRow = sheet.getRow(dataRowIndex)
                             
-                            // Read the data row and show actual Excel values
-                            val actualData = mutableListOf<String>()
-                            
-                            // Read all cells from the data row (row 12)
-                            for (cellIndex in 0 until dataRow.lastCellNum) {
-                                val cell: Cell? = dataRow.getCell(cellIndex)
-                                val cellValue = when (cell?.cellType) {
-                                    org.apache.poi.ss.usermodel.CellType.STRING -> cell.stringCellValue
-                                    org.apache.poi.ss.usermodel.CellType.NUMERIC -> cell.numericCellValue.toString()
-                                    org.apache.poi.ss.usermodel.CellType.BOOLEAN -> cell.booleanCellValue.toString()
-                                    org.apache.poi.ss.usermodel.CellType.FORMULA -> cell.cellFormula
-                                    else -> ""
+                            if (dataRow != null) {
+                                println("📊 ExcelReaderService: Found data row at index $dataRowIndex")
+                                
+                                // Read the data row and show actual Excel values
+                                val actualData = mutableListOf<String>()
+                                
+                                // Read all cells from the data row
+                                for (cellIndex in 0 until dataRow.lastCellNum) {
+                                    val cell: Cell? = dataRow.getCell(cellIndex)
+                                    val cellValue = when (cell?.cellType) {
+                                        org.apache.poi.ss.usermodel.CellType.STRING -> cell.stringCellValue
+                                        org.apache.poi.ss.usermodel.CellType.NUMERIC -> cell.numericCellValue.toString()
+                                        org.apache.poi.ss.usermodel.CellType.BOOLEAN -> cell.booleanCellValue.toString()
+                                        org.apache.poi.ss.usermodel.CellType.FORMULA -> cell.cellFormula
+                                        else -> ""
+                                    }
+                                    actualData.add(cellValue)
+                                    println("📊 ExcelReaderService: Row ${dataRowIndex + 1}, Cell $cellIndex = $cellValue")
                                 }
-                                actualData.add(cellValue)
-                                println("📊 ExcelReaderService: Cell $cellIndex = $cellValue")
-                            }
-                            
-                            // Extract stock data for automatic entry creation
-                            if (actualData.size >= 6) {
-                                val stockName = actualData[0] // Column 1: Stock Name
-                                val stockSymbol = actualData[1] // Column 2: ISIN/Symbol (ADANIPOWER)
-                                val quantity = actualData[2] // Column 3: Quantity
-                                val avgPrice = actualData[3] // Column 4: Average buy price
                                 
-                                println("📊 ExcelReaderService: Extracted stock data:")
-                                println("📊 ExcelReaderService: Stock Name: $stockName")
-                                println("📊 ExcelReaderService: Stock Symbol: $stockSymbol")
-                                println("📊 ExcelReaderService: Quantity: $quantity")
-                                println("📊 ExcelReaderService: Avg Price: $avgPrice")
-                                
-                                // Store extracted data for processing (not displayed)
-                                // This data will be used by StockEntryService
+                                rows.add(ExcelRow(dataRowIndex + 1, actualData))
+                            } else {
+                                println("❌ ExcelReaderService: No data row found at index $dataRowIndex")
+                                rows.add(ExcelRow(dataRowIndex + 1, listOf("No data found")))
                             }
-                            
-                            rows.add(ExcelRow(dataRowIndex + 1, actualData))
-                        } else {
-                            println("❌ ExcelReaderService: No data row found at index $dataRowIndex")
-                            rows.add(ExcelRow(dataRowIndex + 1, listOf("No data found")))
                         }
                     } else {
                         println("❌ ExcelReaderService: No header row found at index $startRow")
