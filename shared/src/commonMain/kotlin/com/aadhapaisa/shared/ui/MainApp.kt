@@ -74,7 +74,8 @@ fun MainApp(
         // Initialize repository with context (only once when context is available)
         LaunchedEffect(context) {
             if (context != null && portfolioRepository != null) {
-                println("🔧 MainApp: Starting price updates")
+                println("🔧 MainApp: Initializing database repository")
+                portfolioRepository.initialize()
                 
                 // Start automatic price updates when repository is initialized
                 marketPriceUpdateService?.startPriceUpdates()
