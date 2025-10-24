@@ -44,7 +44,8 @@ sealed class Screen(val title: String, val icon: ImageVector) {
 @Composable
 fun MainApp(
     onOpenUrl: (String) -> Unit = {},
-    context: Any? = null
+    context: Any? = null,
+    onOpenFilePicker: (() -> Unit)? = null
 ) {
     println("🚀 MainApp: Starting with context: ${context?.let { it::class.simpleName } ?: "null"}")
     
@@ -120,6 +121,7 @@ fun MainApp(
                             HomeScreen(
                                 portfolioRepository = repo,
                                 marketPriceUpdateService = marketPriceUpdateService,
+                                onOpenFilePicker = onOpenFilePicker,
                                 modifier = Modifier.fillMaxSize()
                             )
                         } ?: run {

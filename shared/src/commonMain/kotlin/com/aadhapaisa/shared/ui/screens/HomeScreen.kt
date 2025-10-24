@@ -22,6 +22,7 @@ import com.aadhapaisa.shared.theme.AppTypography
 import com.aadhapaisa.shared.ui.components.SingleDashboardCard
 import com.aadhapaisa.shared.ui.components.RecentPurchaseCard
 import com.aadhapaisa.shared.ui.components.PriceUpdateStatus
+import com.aadhapaisa.shared.ui.components.ExcelImportDialog
 import com.aadhapaisa.shared.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 fun HomeScreen(
     portfolioRepository: PortfolioRepository,
     marketPriceUpdateService: MarketPriceUpdateService?,
+    onOpenFilePicker: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val viewModel = remember { 
@@ -49,6 +51,9 @@ fun HomeScreen(
     // Shared display mode for all stock cards (0: current/invested, 1: profit/loss, 2: day change)
     var displayMode by remember { mutableStateOf(0) }
     
+    // Excel import dialog state
+    var showExcelImportDialog by remember { mutableStateOf(false) }
+    
     
     // Get price update service state
     val isUpdating by marketPriceUpdateService?.isUpdating?.collectAsState() ?: remember { mutableStateOf(false) }
@@ -66,13 +71,14 @@ fun HomeScreen(
 
     // No error handling needed - data loads automatically
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(AppColors.Background)
-            .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColors.Background)
+                .padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
 
         if (isLoading) {
             item {
@@ -130,6 +136,29 @@ fun HomeScreen(
                 }
             }
             
+            // Excel Import Button
+            item {
+                Button(
+                    onClick = {
+                        showExcelImportDialog = true
+                        println("📊 HomeScreen: Excel import button clicked")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColors.Surface
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "📊 Import from Excel",
+                        style = AppTypography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.OnSurface
+                    )
+                }
+            }
             
             // Clear All Data Button (for testing)
             item {
@@ -291,4 +320,18 @@ fun HomeScreen(
             }
         }
         }
+        
+        // Excel Import Dialog
+        if (showExcelImportDialog) {
+            ExcelImportDialog(
+                isVisible = showExcelImportDialog,
+                onDismiss = { showExcelImportDialog = false },
+                onFileSelected = { fileName ->
+                    println("📊 HomeScreen: File selected: $fileName")
+                    showExcelImportDialog = false
+                },
+                onOpenFilePicker = onOpenFilePicker
+            )
+        }
+    }
 }
