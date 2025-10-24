@@ -75,7 +75,7 @@ class DatabasePortfolioRepository(
                     val totalProfitLossPercent = if (totalInvestedValue > 0) (totalProfitLoss / totalInvestedValue) * 100 else 0.0
                     // Calculate days held from first purchase date to today
                     val now = kotlinx.datetime.Clock.System.now()
-                    val daysHeld = (now.epochSeconds - firstPurchaseDate.epochSeconds) / 86400
+                    val daysHeld = (now - firstPurchaseDate).inWholeDays.toInt() + 1
                     val totalDayChange = stockHoldings.sumOf { it.dayChange }
                     val avgDayChangePercent = stockHoldings.map { it.dayChangePercent }.average()
                     
