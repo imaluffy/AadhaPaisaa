@@ -45,7 +45,8 @@ sealed class Screen(val title: String, val icon: ImageVector) {
 fun MainApp(
     onOpenUrl: (String) -> Unit = {},
     context: Any? = null,
-    onOpenFilePicker: (() -> Unit)? = null
+    onOpenFilePicker: (() -> Unit)? = null,
+    onFileSelected: ((String) -> Unit)? = null
 ) {
     println("🚀 MainApp: Starting with context: ${context?.let { it::class.simpleName } ?: "null"}")
     
@@ -122,6 +123,7 @@ fun MainApp(
                                 portfolioRepository = repo,
                                 marketPriceUpdateService = marketPriceUpdateService,
                                 onOpenFilePicker = onOpenFilePicker,
+                                onFileSelected = onFileSelected,
                                 modifier = Modifier.fillMaxSize()
                             )
                         } ?: run {

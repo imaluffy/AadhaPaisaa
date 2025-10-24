@@ -23,6 +23,7 @@ import com.aadhapaisa.shared.ui.components.SingleDashboardCard
 import com.aadhapaisa.shared.ui.components.RecentPurchaseCard
 import com.aadhapaisa.shared.ui.components.PriceUpdateStatus
 import com.aadhapaisa.shared.ui.components.ExcelImportDialog
+import com.aadhapaisa.shared.ui.FileSelectionManager
 import com.aadhapaisa.shared.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +34,7 @@ fun HomeScreen(
     portfolioRepository: PortfolioRepository,
     marketPriceUpdateService: MarketPriceUpdateService?,
     onOpenFilePicker: (() -> Unit)? = null,
+    onFileSelected: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val viewModel = remember { 
@@ -53,6 +55,9 @@ fun HomeScreen(
     
     // Excel import dialog state
     var showExcelImportDialog by remember { mutableStateOf(false) }
+    
+    // Listen to shared file selection state
+    val selectedFileName by FileSelectionManager.selectedFileName.collectAsState()
     
     
     // Get price update service state
@@ -325,12 +330,20 @@ fun HomeScreen(
         if (showExcelImportDialog) {
             ExcelImportDialog(
                 isVisible = showExcelImportDialog,
-                onDismiss = { showExcelImportDialog = false },
+                onDismiss = { 
+                    showExcelImportDialog = false
+                    FileSelectionManager.clearSelection() // Reset file selection when dialog is dismissed
+                },
                 onFileSelected = { fileName ->
                     println("📊 HomeScreen: File selected: $fileName")
-                    showExcelImportDialog = false
+                    // File selection is now handled by shared state
                 },
-                onOpenFilePicker = onOpenFilePicker
+                onOpenFilePicker = {
+                    onOpenFilePicker?.invoke()
+                    // Set a placeholder while file is being selected
+                    FileSelectionManager.setSelectedFileName("Selecting file...")
+                },
+                selectedFileName = selectedFileName
             )
         }
     }

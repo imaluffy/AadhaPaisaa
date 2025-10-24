@@ -19,7 +19,8 @@ fun ExcelImportDialog(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     onFileSelected: (String) -> Unit,
-    onOpenFilePicker: (() -> Unit)? = null
+    onOpenFilePicker: (() -> Unit)? = null,
+    selectedFileName: String? = null
 ) {
     if (isVisible) {
         Dialog(
@@ -68,6 +69,37 @@ fun ExcelImportDialog(
                         textAlign = TextAlign.Center
                     )
                     
+                    // File selection display
+                    if (selectedFileName != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = AppColors.Primary.copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "📄 Selected File:",
+                                    style = AppTypography.bodyMedium,
+                                    color = AppColors.OnSurface,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = selectedFileName,
+                                    style = AppTypography.bodyLarge,
+                                    color = AppColors.Primary,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                    
                     // Choose File button (at the top)
                     Button(
                         onClick = {
@@ -78,12 +110,12 @@ fun ExcelImportDialog(
                             .fillMaxWidth()
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = AppColors.Primary
+                            containerColor = if (selectedFileName != null) AppColors.SecondaryText else AppColors.Primary
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "Choose File",
+                            text = if (selectedFileName != null) "Choose Different File" else "Choose File",
                             color = AppColors.OnPrimary,
                             style = AppTypography.titleMedium,
                             fontWeight = FontWeight.Bold
@@ -118,19 +150,24 @@ fun ExcelImportDialog(
                         Button(
                             onClick = {
                                 println("📊 Import button clicked")
+                                selectedFileName?.let { fileName ->
+                                    onFileSelected(fileName)
+                                }
                                 onDismiss()
                             },
+                            enabled = selectedFileName != null,
                             modifier = Modifier
                                 .weight(1f)
                                 .height(56.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = AppColors.Primary
+                                containerColor = if (selectedFileName != null) AppColors.Primary else AppColors.SecondaryText,
+                                contentColor = if (selectedFileName != null) AppColors.OnPrimary else AppColors.OnSurface
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
                                 text = "Import",
-                                color = AppColors.OnPrimary,
+                                color = if (selectedFileName != null) AppColors.OnPrimary else AppColors.OnSurface,
                                 style = AppTypography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )

@@ -433,7 +433,7 @@ fun StockScreen(
             dayChangePercent = consolidatedHolding.avgDayChangePercent
         )
         
-        StockDetailBottomSheet(
+    StockDetailBottomSheet(
             holding = holding,
             onDismiss = { selectedHoldingSymbol = null },
             onBuy = { _ ->
@@ -441,7 +441,7 @@ fun StockScreen(
                 selectedHoldingSymbol = null
             },
             onSell = { _ ->
-                // TODO: Implement sell functionality
+            // TODO: Implement sell functionality
                 selectedHoldingSymbol = null
             }
         )
