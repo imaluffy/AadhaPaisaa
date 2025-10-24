@@ -64,6 +64,11 @@ kotlin {
             dependencies {
                 implementation("io.ktor:ktor-client-android:2.3.6")
                 implementation("app.cash.sqldelight:android-driver:2.0.1")
+                
+                // Apache POI for Excel reading
+                implementation("org.apache.poi:poi:5.2.4")
+                implementation("org.apache.poi:poi-ooxml:5.2.4")
+                implementation("org.apache.poi:poi-scratchpad:5.2.4")
             }
         }
         val iosX64Main by getting

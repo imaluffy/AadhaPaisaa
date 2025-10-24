@@ -10,8 +10,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import com.aadhapaisa.shared.ui.MainApp
 import com.aadhapaisa.shared.ui.FileSelectionManager
+import com.aadhapaisa.shared.service.ExcelReaderService
+import com.aadhapaisa.shared.service.ContextManager
 
 class MainActivity : ComponentActivity() {
+    
+    // Excel reader service
+    private val excelReaderService = ExcelReaderService()
     
     // File picker launcher using GetContent
     private val filePickerLauncher = registerForActivityResult(
@@ -62,9 +67,9 @@ class MainActivity : ComponentActivity() {
             "Excel File"
         }
         
-        // Update the shared state
-        FileSelectionManager.setSelectedFileName(fileName)
-        println("📊 MainActivity: File name set in shared state: $fileName")
+        // Update the shared state with both file name and URI
+        FileSelectionManager.setSelectedFile(fileName, fileUri)
+        println("📊 MainActivity: File name and URI set in shared state - Name: $fileName, URI: $fileUri")
     }
     
     private fun getFileNameFromUri(uri: Uri): String? {
@@ -121,14 +126,15 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Set context in ContextManager for shared services
+        ContextManager.setContext(this)
+        println("📱 MainActivity: Context set in ContextManager")
+        
         setContent {
             MainApp(
                 context = this,
-                onOpenFilePicker = { openFilePicker() },
-                onFileSelected = { fileName ->
-                    println("📊 MainActivity: Received file selection callback: $fileName")
-                    // This will be called when a file is selected
-                }
+                onOpenFilePicker = { openFilePicker() }
             )
         }
     }

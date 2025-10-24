@@ -23,7 +23,9 @@ import com.aadhapaisa.shared.ui.components.SingleDashboardCard
 import com.aadhapaisa.shared.ui.components.RecentPurchaseCard
 import com.aadhapaisa.shared.ui.components.PriceUpdateStatus
 import com.aadhapaisa.shared.ui.components.ExcelImportDialog
+import com.aadhapaisa.shared.ui.components.ExcelDataDialog
 import com.aadhapaisa.shared.ui.FileSelectionManager
+import com.aadhapaisa.shared.service.ExcelReaderService
 import com.aadhapaisa.shared.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
@@ -55,9 +57,21 @@ fun HomeScreen(
     
     // Excel import dialog state
     var showExcelImportDialog by remember { mutableStateOf(false) }
+    var showExcelDataDialog by remember { mutableStateOf(false) }
+    var excelData by remember { mutableStateOf<com.aadhapaisa.shared.service.ExcelData?>(null) }
     
     // Listen to shared file selection state
     val selectedFileName by FileSelectionManager.selectedFileName.collectAsState()
+    val selectedFileUri by FileSelectionManager.selectedFileUri.collectAsState()
+    
+    // Excel reader service
+    val excelReaderService = remember { ExcelReaderService() }
+    
+    // Set context for Excel reader service (Android specific)
+    LaunchedEffect(Unit) {
+        // This will be handled by platform-specific code
+        println("📊 HomeScreen: Excel reader service initialized")
+    }
     
     
     // Get price update service state
@@ -335,8 +349,87 @@ fun HomeScreen(
                     FileSelectionManager.clearSelection() // Reset file selection when dialog is dismissed
                 },
                 onFileSelected = { fileName ->
-                    println("📊 HomeScreen: File selected: $fileName")
-                    // File selection is now handled by shared state
+                    println("📊 HomeScreen: Import button clicked for file: $fileName")
+                    println("📊 HomeScreen: File URI: $selectedFileUri")
+                    
+                    // Immediately show a test dialog to verify the system works
+                    println("📊 HomeScreen: Creating test data immediately")
+                    excelData = com.aadhapaisa.shared.service.ExcelData(
+                        fileName = fileName,
+                        sheets = listOf(
+                            com.aadhapaisa.shared.service.ExcelSheet(
+                                name = "Test Sheet",
+                                rows = listOf(
+                                    com.aadhapaisa.shared.service.ExcelRow(1, listOf("Column 1", "Column 2", "Column 3")),
+                                    com.aadhapaisa.shared.service.ExcelRow(2, listOf("Data 1", "Data 2", "Data 3")),
+                                    com.aadhapaisa.shared.service.ExcelRow(3, listOf("Test", "Import", "Working"))
+                                )
+                            )
+                        )
+                    )
+                    showExcelDataDialog = true
+                    showExcelImportDialog = false
+                    println("📊 HomeScreen: Test dialog should now be visible")
+                    
+                    // Also try to read the actual Excel file in background
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            println("📊 HomeScreen: Starting Excel file reading...")
+                            val fileUri = selectedFileUri ?: "file://$fileName"
+                            println("📊 HomeScreen: Using file URI: $fileUri")
+                            
+                            val data = excelReaderService.readExcelFile(fileUri)
+                            if (data != null) {
+                                println("📊 HomeScreen: Excel file read successfully")
+                                println("📊 HomeScreen: Found ${data.sheets.size} sheets")
+                                data.sheets.forEach { sheet ->
+                                    println("📊 HomeScreen: Sheet '${sheet.name}' has ${sheet.rows.size} rows")
+                                }
+                                excelData = data
+                            } else {
+                                println("❌ HomeScreen: Failed to read Excel file, creating fallback data")
+                                // Create fallback data to show something
+                                excelData = com.aadhapaisa.shared.service.ExcelData(
+                                    fileName = fileName,
+                                    sheets = listOf(
+                                        com.aadhapaisa.shared.service.ExcelSheet(
+                                            name = "Error Reading File",
+                                            rows = listOf(
+                                                com.aadhapaisa.shared.service.ExcelRow(1, listOf("Error", "Could not read Excel file")),
+                                                com.aadhapaisa.shared.service.ExcelRow(2, listOf("File URI", fileUri)),
+                                                com.aadhapaisa.shared.service.ExcelRow(3, listOf("Status", "Please check file format"))
+                                            )
+                                        )
+                                    )
+                                )
+                            }
+                            
+                            // Always show the dialog
+                            println("📊 HomeScreen: Showing Excel data dialog")
+                            showExcelDataDialog = true
+                            showExcelImportDialog = false
+                            
+                        } catch (e: Exception) {
+                            println("❌ HomeScreen: Error reading Excel file: ${e.message}")
+                            e.printStackTrace()
+                            
+                            // Create error data and show dialog
+                            excelData = com.aadhapaisa.shared.service.ExcelData(
+                                fileName = fileName,
+                                sheets = listOf(
+                                    com.aadhapaisa.shared.service.ExcelSheet(
+                                        name = "Error",
+                                        rows = listOf(
+                                            com.aadhapaisa.shared.service.ExcelRow(1, listOf("Error", e.message ?: "Unknown error")),
+                                            com.aadhapaisa.shared.service.ExcelRow(2, listOf("File", fileName))
+                                        )
+                                    )
+                                )
+                            )
+                            showExcelDataDialog = true
+                            showExcelImportDialog = false
+                        }
+                    }
                 },
                 onOpenFilePicker = {
                     onOpenFilePicker?.invoke()
@@ -344,6 +437,18 @@ fun HomeScreen(
                     FileSelectionManager.setSelectedFileName("Selecting file...")
                 },
                 selectedFileName = selectedFileName
+            )
+        }
+        
+        // Excel Data Display Dialog
+        if (showExcelDataDialog && excelData != null) {
+            ExcelDataDialog(
+                isVisible = showExcelDataDialog,
+                excelData = excelData!!,
+                onDismiss = { 
+                    showExcelDataDialog = false
+                    excelData = null
+                }
             )
         }
     }
