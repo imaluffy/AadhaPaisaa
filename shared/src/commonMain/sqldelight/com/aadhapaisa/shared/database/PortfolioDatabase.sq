@@ -1,0 +1,71 @@
+CREATE TABLE holding (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    stock_symbol TEXT NOT NULL,
+    stock_name TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    buy_price REAL NOT NULL,
+    purchase_date INTEGER NOT NULL,
+    current_price REAL NOT NULL,
+    current_value REAL NOT NULL,
+    invested_value REAL NOT NULL,
+    profit_loss REAL NOT NULL,
+    profit_loss_percent REAL NOT NULL,
+    days_held INTEGER NOT NULL,
+    day_change REAL NOT NULL,
+    day_change_percent REAL NOT NULL
+);
+
+insertHolding:
+INSERT INTO holding (
+    stock_symbol,
+    stock_name,
+    quantity,
+    buy_price,
+    purchase_date,
+    current_price,
+    current_value,
+    invested_value,
+    profit_loss,
+    profit_loss_percent,
+    days_held,
+    day_change,
+    day_change_percent
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM holding ORDER BY purchase_date DESC;
+
+selectBySymbol:
+SELECT * FROM holding WHERE stock_symbol = ?;
+
+updateHolding:
+UPDATE holding SET
+    stock_name = ?,
+    quantity = ?,
+    buy_price = ?,
+    purchase_date = ?,
+    current_price = ?,
+    current_value = ?,
+    invested_value = ?,
+    profit_loss = ?,
+    profit_loss_percent = ?,
+    days_held = ?,
+    day_change = ?,
+    day_change_percent = ?
+WHERE stock_symbol = ?;
+
+deleteHolding:
+DELETE FROM holding WHERE stock_symbol = ?;
+
+deleteAllHoldings:
+DELETE FROM holding;
+
+getRecentPurchases:
+SELECT * FROM holding ORDER BY purchase_date DESC LIMIT ?;
+
+getPositiveHoldings:
+SELECT * FROM holding WHERE profit_loss >= 0 ORDER BY purchase_date DESC;
+
+getNegativeHoldings:
+SELECT * FROM holding WHERE profit_loss < 0 ORDER BY purchase_date DESC;
+
