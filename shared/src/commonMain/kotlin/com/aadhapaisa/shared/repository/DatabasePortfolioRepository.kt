@@ -122,18 +122,18 @@ class DatabasePortfolioRepository(
         }
     
     override fun getRecentPurchases(limit: Int): Flow<List<Holding>> = 
-        database.portfolioDatabaseQueries.getRecentPurchases(limit.toLong()).asFlow().mapToList(Dispatchers.IO).map { dbHoldings ->
-            dbHoldings.map { it.toHolding() }
+        _holdings.asStateFlow().map { holdings ->
+            holdings.sortedByDescending { it.purchaseDate }.take(limit)
         }
     
     override fun getPositiveHoldings(): Flow<List<Holding>> = 
-        database.portfolioDatabaseQueries.getPositiveHoldings().asFlow().mapToList(Dispatchers.IO).map { dbHoldings ->
-            dbHoldings.map { it.toHolding() }
+        _holdings.asStateFlow().map { holdings ->
+            holdings.filter { it.profitLoss >= 0 }
         }
     
     override fun getNegativeHoldings(): Flow<List<Holding>> = 
-        database.portfolioDatabaseQueries.getNegativeHoldings().asFlow().mapToList(Dispatchers.IO).map { dbHoldings ->
-            dbHoldings.map { it.toHolding() }
+        _holdings.asStateFlow().map { holdings ->
+            holdings.filter { it.profitLoss < 0 }
         }
     
     override suspend fun addHolding(holding: Holding) {
@@ -227,6 +227,14 @@ class DatabasePortfolioRepository(
         // Refresh holdings from database to trigger UI update
         refreshHoldings()
         println("🔄 DatabasePortfolioRepository: Holdings refreshed after clearing all data")
+    }
+    
+    /**
+     * Public method to manually refresh holdings from database
+     */
+    fun refreshHoldingsFromDatabase() {
+        println("🔄 DatabasePortfolioRepository: Manual refresh requested")
+        refreshHoldings()
     }
 }
 

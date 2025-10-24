@@ -479,6 +479,10 @@ fun HomeScreen(
                                     // Close the dialog after successful creation
                                     showExcelDataDialog = false
                                     excelData = null
+                                    
+                                    // Trigger portfolio refresh to ensure real-time updates
+                                    println("🔄 HomeScreen: Triggering portfolio refresh after stock entry creation")
+                                    viewModel.refreshPortfolio()
                                 } else {
                                     isCreatingEntry = false
                                     entryCreationProgress = "Failed to create entry"
@@ -511,7 +515,12 @@ fun HomeScreen(
                     },
                     confirmButton = {
                         androidx.compose.material3.TextButton(
-                            onClick = { showSuccessMessage = false }
+                            onClick = { 
+                                showSuccessMessage = false
+                                // Trigger one more refresh before navigating
+                                println("🔄 HomeScreen: Final refresh before navigating to portfolio")
+                                viewModel.refreshPortfolio()
+                            }
                         ) {
                             Text("View Portfolio")
                         }

@@ -22,7 +22,7 @@ class HomeViewModel(
     // Directly expose repository flows - no loading states
     val portfolioSummary: StateFlow<PortfolioSummary> = portfolioRepository.getPortfolioSummary().stateIn(
         scope = CoroutineScope(Dispatchers.Main),
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly, // Changed to Eagerly for immediate updates
         initialValue = PortfolioSummary(
             totalInvested = 0.0,
             currentValue = 0.0,
@@ -36,7 +36,7 @@ class HomeViewModel(
 
     val recentPurchases: StateFlow<List<Holding>> = portfolioRepository.getRecentPurchases(3).stateIn(
         scope = CoroutineScope(Dispatchers.Main),
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly, // Changed to Eagerly for immediate updates
         initialValue = emptyList()
     )
 
@@ -114,5 +114,23 @@ class HomeViewModel(
      */
     fun isPriceUpdateRunning(): Boolean {
         return marketPriceUpdateService?.isRunning() ?: false
+    }
+    
+    /**
+     * Manually refresh portfolio data
+     */
+    fun refreshPortfolio() {
+        println("🔄 HomeViewModel: Manual refresh requested")
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Force refresh by calling the repository refresh method
+                if (portfolioRepository is com.aadhapaisa.shared.repository.DatabasePortfolioRepository) {
+                    portfolioRepository.refreshHoldingsFromDatabase()
+                    println("🔄 HomeViewModel: Repository refresh completed")
+                }
+            } catch (e: Exception) {
+                println("❌ HomeViewModel: Error during manual refresh: ${e.message}")
+            }
+        }
     }
 }
