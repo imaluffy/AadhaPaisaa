@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.Instant
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers 
 
 class DatabasePortfolioRepository(
     private val driverFactory: DatabaseDriverFactory
@@ -41,12 +41,16 @@ class DatabasePortfolioRepository(
         try {
             val dbHoldings = database.portfolioDatabaseQueries.selectAll().executeAsList()
             val holdings = dbHoldings.map { it.toHolding() }
-            _holdings.value = holdings
             
             println("📊 DatabasePortfolioRepository: Refreshed holdings from database:")
             holdings.forEach { holding ->
                 println("  - ${holding.stockSymbol}: ₹${holding.currentPrice}")
             }
+            
+            // Update the StateFlow to trigger UI refresh
+            _holdings.value = holdings
+            println("🔄 DatabasePortfolioRepository: StateFlow updated with ${holdings.size} holdings")
+            
         } catch (e: Exception) {
             println("❌ DatabasePortfolioRepository: Error refreshing holdings: ${e.message}")
         }

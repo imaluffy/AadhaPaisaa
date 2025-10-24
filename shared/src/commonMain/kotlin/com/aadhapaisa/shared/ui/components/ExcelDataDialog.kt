@@ -1,16 +1,22 @@
 package com.aadhapaisa.shared.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -24,21 +30,23 @@ import com.aadhapaisa.shared.theme.AppTypography
 fun ExcelDataDialog(
     isVisible: Boolean,
     excelData: ExcelData,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onCreateStockEntry: (() -> Unit)? = null
 ) {
     if (isVisible) {
         Dialog(
             onDismissRequest = onDismiss,
             properties = DialogProperties(
+                usePlatformDefaultWidth = false,
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true
             )
         ) {
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.8f)
-                    .padding(16.dp),
+                    .fillMaxWidth(0.98f)
+                    .fillMaxHeight(0.95f)
+                    .padding(8.dp),
                 colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
@@ -46,17 +54,31 @@ fun ExcelDataDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header
-                    Text(
-                        text = "📊 Excel Data Preview",
-                        style = AppTypography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.OnSurface
-                    )
+                    // Header with close button
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "📊 Excel Data Preview",
+                            style = AppTypography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.OnSurface
+                        )
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = AppColors.OnSurface
+                            )
+                        }
+                    }
                     
+                    // File info
                     Text(
                         text = "File: ${excelData.fileName}",
                         style = AppTypography.bodyLarge,
@@ -69,31 +91,56 @@ fun ExcelDataDialog(
                         color = AppColors.SecondaryText
                     )
                     
-                    // Sheets content
+                    // Sheets content with horizontal scrolling
                     LazyColumn(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(excelData.sheets) { sheet ->
-                            SheetPreview(sheet = sheet)
+                            HorizontalScrollableSheetPreview(sheet = sheet)
                         }
                     }
                     
-                    // Close button
-                    Button(
-                        onClick = onDismiss,
+                    // Action buttons
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AppColors.Primary
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "Close",
-                            color = AppColors.OnPrimary,
-                            style = AppTypography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        // Create Stock Entry button
+                        if (onCreateStockEntry != null) {
+                            Button(
+                                onClick = onCreateStockEntry,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = AppColors.Secondary
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "📈 Create Stock Entry",
+                                    color = AppColors.OnPrimary,
+                                    style = AppTypography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        
+                        // Close button
+                        Button(
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppColors.Primary
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Close",
+                                color = AppColors.OnPrimary,
+                                style = AppTypography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -102,7 +149,7 @@ fun ExcelDataDialog(
 }
 
 @Composable
-private fun SheetPreview(sheet: ExcelSheet) {
+private fun HorizontalScrollableSheetPreview(sheet: ExcelSheet) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -112,14 +159,24 @@ private fun SheetPreview(sheet: ExcelSheet) {
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "📋 Sheet: ${sheet.name}",
-                style = AppTypography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = AppColors.Primary
-            )
+            // Sheet header
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📋",
+                    style = AppTypography.titleLarge
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Sheet: ${sheet.name}",
+                    style = AppTypography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.Primary
+                )
+            }
             
             Text(
                 text = "${sheet.rows.size} rows",
@@ -127,56 +184,91 @@ private fun SheetPreview(sheet: ExcelSheet) {
                 color = AppColors.SecondaryText
             )
             
-            // Show first few rows as preview
-            val previewRows = sheet.rows.take(5)
-            previewRows.forEach { row ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            if (row.rowNumber == 1) AppColors.Primary.copy(alpha = 0.2f) 
-                            else AppColors.Surface
-                        )
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "${row.rowNumber}",
-                        style = AppTypography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.SecondaryText,
-                        modifier = Modifier.width(30.dp)
-                    )
-                    
-                    row.cells.take(5).forEach { cell ->
+            // Horizontal scrollable table
+            HorizontalScrollableTable(rows = sheet.rows)
+        }
+    }
+}
+
+@Composable
+private fun HorizontalScrollableTable(rows: List<ExcelRow>) {
+    val horizontalScrollState = rememberScrollState()
+    
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Horizontal scrollable content
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(horizontalScrollState)
+        ) {
+            // Table with fixed minimum width to prevent text wrapping
+            Column(
+                modifier = Modifier.widthIn(min = 1000.dp) // Ensure enough width for all columns
+            ) {
+                rows.forEach { row ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (row.rowNumber == 11) AppColors.Primary.copy(alpha = 0.2f)
+                                else if (row.rowNumber == 12) AppColors.Secondary.copy(alpha = 0.1f)
+                                else AppColors.Surface
+                            )
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Row number
                         Text(
-                            text = cell.ifEmpty { "-" },
+                            text = "${row.rowNumber}",
                             style = AppTypography.bodySmall,
-                            color = if (row.rowNumber == 1) AppColors.Primary else AppColors.OnSurface,
-                            fontWeight = if (row.rowNumber == 1) FontWeight.Bold else FontWeight.Normal,
-                            modifier = Modifier.weight(1f)
+                            fontWeight = FontWeight.Bold,
+                            color = if (row.rowNumber == 11) AppColors.Primary else AppColors.SecondaryText,
+                            modifier = Modifier.width(40.dp)
                         )
-                    }
-                    
-                    if (row.cells.size > 5) {
-                        Text(
-                            text = "...",
-                            style = AppTypography.bodySmall,
-                            color = AppColors.SecondaryText
-                        )
+                        
+                        // Cells in horizontal layout
+                        row.cells.forEach { cell ->
+                            Card(
+                                modifier = Modifier
+                                    .widthIn(min = 120.dp, max = 200.dp)
+                                    .padding(horizontal = 2.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (row.rowNumber == 11) 
+                                        AppColors.Primary.copy(alpha = 0.3f)
+                                    else AppColors.SurfaceVariant
+                                ),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = cell.ifEmpty { "-" },
+                                    style = AppTypography.bodySmall,
+                                    color = if (row.rowNumber == 11) AppColors.Primary else AppColors.OnSurface,
+                                    fontWeight = if (row.rowNumber == 11) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.padding(8.dp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
                     }
                 }
             }
-            
-            if (sheet.rows.size > 5) {
-                Text(
-                    text = "... and ${sheet.rows.size - 5} more rows",
-                    style = AppTypography.bodySmall,
-                    color = AppColors.SecondaryText,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+        }
+        
+        // Scroll indicator
+        if (horizontalScrollState.canScrollForward || horizontalScrollState.canScrollBackward) {
+            Text(
+                text = "← Scroll horizontally to see all columns →",
+                style = AppTypography.bodySmall,
+                color = AppColors.Primary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
         }
     }
 }

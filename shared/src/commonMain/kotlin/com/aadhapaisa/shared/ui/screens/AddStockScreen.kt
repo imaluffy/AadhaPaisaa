@@ -34,6 +34,7 @@ import com.aadhapaisa.shared.api.StockSearchResult
 import com.aadhapaisa.shared.api.StockDetails
 import com.aadhapaisa.shared.theme.AppColors
 import com.aadhapaisa.shared.theme.AppTypography
+import com.aadhapaisa.shared.service.ExcelDataManager
 import kotlinx.coroutines.launch
 
 data class StockSuggestion(
@@ -54,6 +55,20 @@ fun AddStockScreen(
         var quantity by remember { mutableStateOf("") }
         var purchaseDate by remember { mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) }
         var purchasePrice by remember { mutableStateOf("") }
+        
+        // Pre-fill form with Excel data if available
+        val preFilledData by ExcelDataManager.preFilledData.collectAsState()
+        LaunchedEffect(preFilledData) {
+            preFilledData?.let { data ->
+                println("📊 AddStockScreen: Pre-filling form with Excel data")
+                println("📊 AddStockScreen: Symbol: ${data.stockSymbol}, Qty: ${data.quantity}, Price: ${data.avgPrice}")
+                searchQuery = data.stockSymbol
+                quantity = data.quantity
+                purchasePrice = data.avgPrice
+                // Clear the pre-filled data after using it
+                ExcelDataManager.clearPreFilledData()
+            }
+        }
         var useMarketPrice by remember { mutableStateOf(false) }
         var showDatePicker by remember { mutableStateOf(false) }
         var targetPrice by remember { mutableStateOf("") }

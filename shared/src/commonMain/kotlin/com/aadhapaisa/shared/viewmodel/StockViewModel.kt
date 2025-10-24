@@ -38,7 +38,17 @@ class StockViewModel(
         scope = CoroutineScope(Dispatchers.Main),
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
-    )
+    ).also { flow ->
+        // Debug: Log when holdings change
+        CoroutineScope(Dispatchers.Main).launch {
+            flow.collect { holdings ->
+                println("🔄 StockViewModel: Holdings updated - ${holdings.size} holdings")
+                holdings.forEach { holding ->
+                    println("🔄 StockViewModel: - ${holding.stockSymbol}: ₹${holding.currentPrice}")
+                }
+            }
+        }
+    }
 
     val positiveHoldings: StateFlow<List<ConsolidatedHolding>> = allHoldings.let { holdingsFlow ->
         holdingsFlow.map { holdings ->

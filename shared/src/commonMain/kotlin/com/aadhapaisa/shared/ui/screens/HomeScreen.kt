@@ -37,6 +37,7 @@ fun HomeScreen(
     marketPriceUpdateService: MarketPriceUpdateService?,
     onOpenFilePicker: (() -> Unit)? = null,
     onFileSelected: ((String) -> Unit)? = null,
+    onNavigateToAddStock: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val viewModel = remember { 
@@ -56,9 +57,12 @@ fun HomeScreen(
     var displayMode by remember { mutableStateOf(0) }
     
     // Excel import dialog state
-    var showExcelImportDialog by remember { mutableStateOf(false) }
-    var showExcelDataDialog by remember { mutableStateOf(false) }
-    var excelData by remember { mutableStateOf<com.aadhapaisa.shared.service.ExcelData?>(null) }
+            var showExcelImportDialog by remember { mutableStateOf(false) }
+            var showExcelDataDialog by remember { mutableStateOf(false) }
+            var excelData by remember { mutableStateOf<com.aadhapaisa.shared.service.ExcelData?>(null) }
+            var showSuccessMessage by remember { mutableStateOf(false) }
+            var isCreatingEntry by remember { mutableStateOf(false) }
+            var entryCreationProgress by remember { mutableStateOf("") }
     
     // Listen to shared file selection state
     val selectedFileName by FileSelectionManager.selectedFileName.collectAsState()
@@ -66,6 +70,7 @@ fun HomeScreen(
     
     // Excel reader service
     val excelReaderService = remember { ExcelReaderService() }
+    val stockEntryService = remember { com.aadhapaisa.shared.service.StockEntryService() }
     
     // Set context for Excel reader service (Android specific)
     LaunchedEffect(Unit) {
@@ -441,15 +446,107 @@ fun HomeScreen(
         }
         
         // Excel Data Display Dialog
-        if (showExcelDataDialog && excelData != null) {
-            ExcelDataDialog(
-                isVisible = showExcelDataDialog,
-                excelData = excelData!!,
-                onDismiss = { 
-                    showExcelDataDialog = false
-                    excelData = null
-                }
-            )
-        }
+            if (showExcelDataDialog && excelData != null) {
+                ExcelDataDialog(
+                    isVisible = showExcelDataDialog,
+                    excelData = excelData!!,
+                    onDismiss = {
+                        showExcelDataDialog = false
+                        excelData = null
+                    },
+                    onCreateStockEntry = {
+                        // Create stock entry from Excel data
+                        CoroutineScope(Dispatchers.IO).launch {
+                            try {
+                                isCreatingEntry = true
+                                entryCreationProgress = "Processing Excel data..."
+                                
+                                println("📊 HomeScreen: Creating stock entry from Excel data")
+                                entryCreationProgress = "Searching for stock..."
+                                
+                                val success = stockEntryService.createStockEntryFromExcel(excelData!!)
+                                
+                                if (success) {
+                                    entryCreationProgress = "Creating portfolio entry..."
+                                    println("📊 HomeScreen: Stock entry created successfully")
+                                    
+                                    // Small delay to show the final progress message
+                                    kotlinx.coroutines.delay(500)
+                                    
+                                    isCreatingEntry = false
+                                    // Show success message
+                                    showSuccessMessage = true
+                                    // Close the dialog after successful creation
+                                    showExcelDataDialog = false
+                                    excelData = null
+                                } else {
+                                    isCreatingEntry = false
+                                    entryCreationProgress = "Failed to create entry"
+                                    println("❌ HomeScreen: Failed to create stock entry")
+                                }
+                            } catch (e: Exception) {
+                                isCreatingEntry = false
+                                entryCreationProgress = "Error: ${e.message}"
+                                println("❌ HomeScreen: Error creating stock entry: ${e.message}")
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                )
+            }
+        
+        // Success message dialog
+            if (showSuccessMessage) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showSuccessMessage = false },
+                    title = { Text("✅ Stock Entry Created!") },
+                    text = {
+                        Column {
+                            Text("Your stock entry has been automatically created and saved to your portfolio!")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("The system searched for the stock, got its current price, and created the entry with your Excel data.")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Check the Portfolio tab to see your new holding.")
+                        }
+                    },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = { showSuccessMessage = false }
+                        ) {
+                            Text("View Portfolio")
+                        }
+                    }
+                )
+            }
+            
+            // Loading dialog while creating entry
+            if (isCreatingEntry) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { /* Prevent dismissal while loading */ },
+                    title = { 
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Creating Stock Entry...")
+                        }
+                    },
+                    text = {
+                        Text(entryCreationProgress)
+                    },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = { /* Disabled while loading */ },
+                            enabled = false
+                        ) {
+                            Text("Please wait...")
+                        }
+                    }
+                )
+            }
     }
 }

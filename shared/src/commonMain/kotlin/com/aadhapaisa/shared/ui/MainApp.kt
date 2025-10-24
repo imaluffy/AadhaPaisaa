@@ -124,6 +124,7 @@ fun MainApp(
                                 marketPriceUpdateService = marketPriceUpdateService,
                                 onOpenFilePicker = onOpenFilePicker,
                                 onFileSelected = onFileSelected,
+                                onNavigateToAddStock = { currentScreen = Screen.AddStock },
                                 modifier = Modifier.fillMaxSize()
                             )
                         } ?: run {
