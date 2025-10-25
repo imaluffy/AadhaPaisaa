@@ -89,14 +89,44 @@ actual class ExcelReaderService {
                         val columnMapping = mapHeadersToFields(headerCells)
                         println("📊 ExcelReaderService: Column mapping: $columnMapping")
                         
-                        // Read rows 12, 13, 14 (indices 11, 12, 13) - data rows
-                        val dataRowIndices = listOf(11, 12, 13) // Rows 12, 13, 14 in Excel (0-indexed)
+                        // Read all rows from 11 to the last non-empty row
+                        println("📊 ExcelReaderService: Reading all rows from row 11 to last non-empty row")
                         
-                        for (dataRowIndex in dataRowIndices) {
+                        // Find the last row with data
+                        var lastRowIndex = sheet.lastRowNum
+                        for (rowIndex in sheet.lastRowNum downTo 10) { // Start from last row, go back to row 11
+                            val testRow = sheet.getRow(rowIndex)
+                            if (testRow != null) {
+                                var hasData = false
+                                for (cellIndex in 0 until testRow.lastCellNum) {
+                                    val cell = testRow.getCell(cellIndex)
+                                    val cellValue = when (cell?.cellType) {
+                                        org.apache.poi.ss.usermodel.CellType.STRING -> cell.stringCellValue
+                                        org.apache.poi.ss.usermodel.CellType.NUMERIC -> cell.numericCellValue.toString()
+                                        org.apache.poi.ss.usermodel.CellType.BOOLEAN -> cell.booleanCellValue.toString()
+                                        org.apache.poi.ss.usermodel.CellType.FORMULA -> cell.cellFormula
+                                        else -> ""
+                                    }
+                                    if (cellValue.isNotBlank()) {
+                                        hasData = true
+                                        break
+                                    }
+                                }
+                                if (hasData) {
+                                    lastRowIndex = rowIndex
+                                    break
+                                }
+                            }
+                        }
+                        
+                        println("📊 ExcelReaderService: Last row with data found at index: $lastRowIndex")
+                        
+                        // Read all data rows from 12 to lastRowIndex (skip header row 11)
+                        for (dataRowIndex in 11..lastRowIndex) { // 11 = row 12, lastRowIndex = last row
                             val dataRow = sheet.getRow(dataRowIndex)
                             
                             if (dataRow != null) {
-                                println("📊 ExcelReaderService: Found data row at index $dataRowIndex")
+                                println("📊 ExcelReaderService: Processing row ${dataRowIndex + 1}")
                                 
                                 // Read the data row and show actual Excel values
                                 val actualData = mutableListOf<String>()
@@ -112,13 +142,15 @@ actual class ExcelReaderService {
                                         else -> ""
                                     }
                                     actualData.add(cellValue)
-                                    println("📊 ExcelReaderService: Row ${dataRowIndex + 1}, Cell $cellIndex = $cellValue")
                                 }
                                 
-                                rows.add(ExcelRow(dataRowIndex + 1, actualData))
+                                // Only add non-empty rows
+                                if (actualData.any { it.isNotBlank() }) {
+                                    rows.add(ExcelRow(dataRowIndex + 1, actualData))
+                                    println("📊 ExcelReaderService: Added row ${dataRowIndex + 1} with ${actualData.size} cells")
+                                }
                             } else {
-                                println("❌ ExcelReaderService: No data row found at index $dataRowIndex")
-                                rows.add(ExcelRow(dataRowIndex + 1, listOf("No data found")))
+                                println("📊 ExcelReaderService: No data row found at index $dataRowIndex")
                             }
                         }
                     } else {

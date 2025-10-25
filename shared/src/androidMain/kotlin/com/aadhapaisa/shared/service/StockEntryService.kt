@@ -15,7 +15,7 @@ import kotlinx.datetime.toLocalDateTime
 
 actual class StockEntryService {
     
-    actual suspend fun createStockEntryFromExcel(excelData: ExcelData): Boolean {
+    actual suspend fun createStockEntryFromExcel(excelData: ExcelData, onProgress: (String) -> Unit): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 println("📊 StockEntryService: Processing Excel data for stock entry creation")
@@ -24,24 +24,40 @@ actual class StockEntryService {
                 val stockDataList = findMultipleStockDataFromExcel(excelData)
                 if (stockDataList.isNotEmpty()) {
                     println("📊 StockEntryService: Found ${stockDataList.size} stock entries to create")
+                    onProgress("Found ${stockDataList.size} stock entries to process...")
+                    
                     var successCount = 0
                     for ((index, stockData) in stockDataList.withIndex()) {
-                        println("📊 StockEntryService: Creating entry ${index + 1}/${stockDataList.size}: ${stockData.stockSymbol}")
+                        val currentEntry = index + 1
+                        val totalEntries = stockDataList.size
+                        
+                        onProgress("Creating entry $currentEntry/$totalEntries: ${stockData.stockSymbol}")
+                        println("📊 StockEntryService: Creating entry $currentEntry/$totalEntries: ${stockData.stockSymbol}")
+                        
                         val success = searchAndCreateEntry(
                             stockData.stockSymbol,
                             stockData.quantity,
                             stockData.avgPrice
                         )
+                        
                         if (success) {
                             successCount++
-                            println("📊 StockEntryService: ✅ Entry ${index + 1} created successfully")
+                            onProgress("✅ Entry $currentEntry/$totalEntries created: ${stockData.stockSymbol}")
+                            println("📊 StockEntryService: ✅ Entry $currentEntry created successfully")
                         } else {
-                            println("📊 StockEntryService: ❌ Entry ${index + 1} failed")
+                            onProgress("❌ Entry $currentEntry/$totalEntries failed: ${stockData.stockSymbol}")
+                            println("📊 StockEntryService: ❌ Entry $currentEntry failed")
                         }
+                        
+                        // Small delay to show progress
+                        kotlinx.coroutines.delay(200)
                     }
+                    
+                    onProgress("✅ Completed: $successCount/${stockDataList.size} entries created successfully")
                     println("📊 StockEntryService: Created $successCount out of ${stockDataList.size} entries")
                     return@withContext successCount > 0
                 } else {
+                    onProgress("❌ No stock data found in Excel file")
                     println("❌ StockEntryService: No stock data found in Excel")
                     return@withContext false
                 }
@@ -156,8 +172,8 @@ actual class StockEntryService {
             println("📊 StockEntryService: Checking sheet: ${sheet.name}")
             for (row in sheet.rows) {
                 println("📊 StockEntryService: Row ${row.rowNumber}: ${row.cells}")
-                // Look for rows 12, 13, 14 (data rows) and extract the first 4 columns
-                if (row.rowNumber in 12..14 && row.cells.size >= 4) {
+                // Look for all data rows (row 12 onwards) and extract the first 4 columns
+                if (row.rowNumber >= 12 && row.cells.size >= 4) {
                     val stockName = row.cells[0]
                     val stockSymbol = row.cells[1]
                     val quantity = row.cells[2]

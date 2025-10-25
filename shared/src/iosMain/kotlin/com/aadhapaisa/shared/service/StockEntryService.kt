@@ -5,13 +5,15 @@ import kotlinx.coroutines.withContext
 
 actual class StockEntryService {
     
-    actual suspend fun createStockEntryFromExcel(excelData: ExcelData): Boolean {
+    actual suspend fun createStockEntryFromExcel(excelData: ExcelData, onProgress: (String) -> Unit): Boolean {
         return withContext(Dispatchers.Main) {
             try {
+                onProgress("iOS: Mock implementation - no stock entries created")
                 println("📊 StockEntryService: Processing Excel data for stock entry creation (iOS)")
                 // iOS implementation would go here
                 return@withContext false
             } catch (e: Exception) {
+                onProgress("❌ iOS: Error creating stock entry: ${e.message}")
                 println("❌ StockEntryService: Error creating stock entry: ${e.message}")
                 return@withContext false
             }

@@ -2,6 +2,7 @@ package com.aadhapaisa.shared.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -184,8 +185,97 @@ private fun HorizontalScrollableSheetPreview(sheet: ExcelSheet) {
                 color = AppColors.SecondaryText
             )
             
-            // Horizontal scrollable table
-            HorizontalScrollableTable(rows = sheet.rows)
+            // Scrollable table with both horizontal and vertical scrolling
+            ScrollableTable(rows = sheet.rows)
+        }
+    }
+}
+
+@Composable
+private fun ScrollableTable(rows: List<ExcelRow>) {
+    val horizontalScrollState = rememberScrollState()
+    val verticalScrollState = rememberScrollState()
+    
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Scrollable content with both horizontal and vertical scrolling
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 400.dp) // Limit height to enable vertical scrolling
+                .verticalScroll(verticalScrollState)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(horizontalScrollState)
+            ) {
+                // Table with increased minimum width to prevent text wrapping
+                Column(
+                    modifier = Modifier.widthIn(min = 1500.dp) // Increased from 1000.dp to accommodate longer stock names
+                ) {
+                    rows.forEach { row ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (row.rowNumber == 11) AppColors.Primary.copy(alpha = 0.2f)
+                                    else if (row.rowNumber >= 12) AppColors.Secondary.copy(alpha = 0.1f)
+                                    else AppColors.Surface
+                                )
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Row number
+                            Text(
+                                text = "${row.rowNumber}",
+                                style = AppTypography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (row.rowNumber == 11) AppColors.Primary else AppColors.SecondaryText,
+                                modifier = Modifier.width(40.dp)
+                            )
+                            
+                            // Cells in horizontal layout
+                            row.cells.forEach { cell ->
+                                Card(
+                                    modifier = Modifier
+                                        .widthIn(min = 120.dp)
+                                        .padding(horizontal = 2.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (row.rowNumber == 11) 
+                                            AppColors.Primary.copy(alpha = 0.3f)
+                                        else AppColors.SurfaceVariant
+                                    ),
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = cell.ifEmpty { "-" },
+                                        style = AppTypography.bodySmall,
+                                        color = if (row.rowNumber == 11) AppColors.Primary else AppColors.OnSurface,
+                                        fontWeight = if (row.rowNumber == 11) FontWeight.Bold else FontWeight.Normal,
+                                        modifier = Modifier.padding(8.dp),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Visible
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Scroll indicators
+        if (horizontalScrollState.maxValue > 0 || verticalScrollState.maxValue > 0) {
+            Text(
+                text = "← Scroll horizontally and vertically to see all data →",
+                style = AppTypography.bodySmall,
+                color = AppColors.SecondaryText,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -203,9 +293,9 @@ private fun HorizontalScrollableTable(rows: List<ExcelRow>) {
                 .fillMaxWidth()
                 .horizontalScroll(horizontalScrollState)
         ) {
-            // Table with fixed minimum width to prevent text wrapping
+            // Table with increased minimum width to prevent text wrapping
             Column(
-                modifier = Modifier.widthIn(min = 1000.dp) // Ensure enough width for all columns
+                modifier = Modifier.widthIn(min = 1500.dp) // Increased from 1000.dp to accommodate longer stock names
             ) {
                 rows.forEach { row ->
                     Row(
@@ -233,7 +323,7 @@ private fun HorizontalScrollableTable(rows: List<ExcelRow>) {
                         row.cells.forEach { cell ->
                             Card(
                                 modifier = Modifier
-                                    .widthIn(min = 120.dp, max = 200.dp)
+                                    .widthIn(min = 120.dp)
                                     .padding(horizontal = 2.dp),
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (row.rowNumber == 11) 
@@ -249,7 +339,7 @@ private fun HorizontalScrollableTable(rows: List<ExcelRow>) {
                                     fontWeight = if (row.rowNumber == 11) FontWeight.Bold else FontWeight.Normal,
                                     modifier = Modifier.padding(8.dp),
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Visible
                                 )
                             }
                         }

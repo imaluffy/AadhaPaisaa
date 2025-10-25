@@ -57,7 +57,7 @@ fun HomeScreen(
     var displayMode by remember { mutableStateOf(0) }
     
     // Excel import dialog state
-            var showExcelImportDialog by remember { mutableStateOf(false) }
+    var showExcelImportDialog by remember { mutableStateOf(false) }
             var showExcelDataDialog by remember { mutableStateOf(false) }
             var excelData by remember { mutableStateOf<com.aadhapaisa.shared.service.ExcelData?>(null) }
             var showSuccessMessage by remember { mutableStateOf(false) }
@@ -468,7 +468,9 @@ fun HomeScreen(
                                 println("📊 HomeScreen: Creating stock entries from Excel data")
                                 entryCreationProgress = "Searching for stocks..."
                                 
-                                val success = stockEntryService.createStockEntryFromExcel(excelData!!)
+                                val success = stockEntryService.createStockEntryFromExcel(excelData!!) { progressMessage ->
+                        entryCreationProgress = progressMessage
+                    }
                                 
                                 if (success) {
                                     entryCreationProgress = "Creating portfolio entries..."
@@ -559,7 +561,7 @@ fun HomeScreen(
                             Text("Please wait...")
                         }
                     }
-                )
-            }
+            )
+        }
     }
 }

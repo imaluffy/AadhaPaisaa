@@ -8,6 +8,7 @@ import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import com.aadhapaisa.shared.service.IsinToTickerService
 
 @Serializable
 data class StockSearchResult(
@@ -580,6 +581,51 @@ class StockSearchService {
     }
 
     // Mock data completely removed - only real API calls now
+    
+    // ISIN search methods
+    suspend fun searchStocksByIsin(isin: String): List<StockSearchResult> {
+        return try {
+            println("🔍 StockSearchService: Searching stocks by ISIN: $isin")
+            
+            // Convert ISIN to ticker symbol using OpenFIGI
+            val isinToTickerService = IsinToTickerService()
+            val ticker = isinToTickerService.convertIsinToTicker(isin)
+            
+            if (ticker != null) {
+                println("🔍 StockSearchService: Found ticker $ticker for ISIN $isin")
+                // Use the ticker to search for stocks
+                searchStocks(ticker)
+            } else {
+                println("❌ StockSearchService: No ticker found for ISIN: $isin")
+                emptyList()
+            }
+        } catch (e: Exception) {
+            println("❌ StockSearchService: Error searching by ISIN: ${e.message}")
+            emptyList()
+        }
+    }
+    
+    suspend fun getStockDetailsByIsin(isin: String): StockDetails? {
+        return try {
+            println("🔍 StockSearchService: Getting stock details by ISIN: $isin")
+            
+            // Convert ISIN to ticker symbol using OpenFIGI
+            val isinToTickerService = IsinToTickerService()
+            val ticker = isinToTickerService.convertIsinToTicker(isin)
+            
+            if (ticker != null) {
+                println("🔍 StockSearchService: Found ticker $ticker for ISIN $isin")
+                // Use the ticker to get stock details
+                getStockDetailsFromYahoo(ticker)
+            } else {
+                println("❌ StockSearchService: No ticker found for ISIN: $isin")
+                null
+            }
+        } catch (e: Exception) {
+            println("❌ StockSearchService: Error getting details by ISIN: ${e.message}")
+            null
+        }
+    }
 
     fun close() {
         httpClient.close()

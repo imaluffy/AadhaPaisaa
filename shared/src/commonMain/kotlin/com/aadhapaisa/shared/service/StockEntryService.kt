@@ -11,6 +11,6 @@ data class StockEntryData(
 )
 
 expect class StockEntryService {
-    suspend fun createStockEntryFromExcel(excelData: ExcelData): Boolean
+    suspend fun createStockEntryFromExcel(excelData: ExcelData, onProgress: (String) -> Unit = {}): Boolean
     suspend fun searchAndCreateEntry(stockSymbol: String, quantity: String, avgPrice: String): Boolean
 }
